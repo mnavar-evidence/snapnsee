@@ -23,7 +23,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 app = FastAPI(
     title="SnapnSee API",
     description="AI-powered movie/TV show recognition using GPT-4o Vision",
-    version="2.0.0",
+    version="2.0.1",
 )
 
 # Add CORS middleware
