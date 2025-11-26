@@ -15,10 +15,9 @@ SnapnSee is an AI-powered app that identifies movies and TV shows from Netflix s
 ## 🏗️ Architecture
 
 ### Backend (Python + FastAPI)
-- **OCR**: EasyOCR for text extraction from title screens
-- **Visual Recognition**: OpenAI's CLIP model for image embeddings
-- **Vector Database**: 50 popular Netflix titles with pre-computed embeddings
+- **AI Vision**: GPT-4o Vision API for intelligent image recognition
 - **Metadata**: TMDB API integration for movie/show details
+- **Lightweight**: No local models or embeddings - ~50MB deployment
 
 ### iOS App (Swift + SwiftUI)
 - **Camera**: Live preview with AVFoundation
@@ -62,9 +61,10 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. **Set TMDB API Key:**
+2. **Set API Keys:**
 ```bash
-echo "TMDB_API_KEY=your_key_here" > .env
+echo "TMDB_API_KEY=your_tmdb_key_here" > .env
+echo "OPENAI_API_KEY=your_openai_key_here" >> .env
 ```
 
 3. **Run locally:**
@@ -98,8 +98,9 @@ railway init
 railway up
 ```
 
-Add environment variable in Railway dashboard:
+Add environment variables in Railway dashboard:
 - `TMDB_API_KEY` = `your_tmdb_api_key`
+- `OPENAI_API_KEY` = `your_openai_api_key`
 
 Then update `ios/SnapnSee/SnapnSee/Config.swift` with your Railway URL.
 
@@ -108,52 +109,40 @@ Then update `ios/SnapnSee/SnapnSee/Config.swift` with your Railway URL.
 ### Recognition Pipeline
 
 1. **Image Capture**: iPhone camera captures TV screen
-2. **Text Extraction** (Primary):
-   - EasyOCR extracts visible text
-   - Smart filtering finds title candidates
-   - TMDB search matches title
-3. **Visual Matching** (Fallback):
-   - CLIP model generates image embedding
-   - Cosine similarity search in vector database
-   - Returns best match above 90% threshold
-4. **Metadata Fetch**: TMDB API enriches result with details
-
-### Current Database
-
-50 popular Netflix titles including:
-- Memoirs of a Geisha
-- Inception
-- Interstellar
-- The Matrix
-- Breaking Bad
-- Stranger Things
-- And more...
+2. **AI Vision Recognition**:
+   - GPT-4o Vision analyzes the image
+   - Identifies title, media type, and release year
+   - Returns confidence score and reasoning
+3. **TMDB Verification**:
+   - Searches TMDB with identified title
+   - Filters by media type and year
+   - Fetches detailed metadata
+4. **Result Display**: Shows movie/show details with rating, overview, and confidence
 
 ## 🔮 Future Enhancements
 
-- [ ] Expand database to 1000+ titles
-- [ ] Add logo recognition for branded content
-- [ ] Support other streaming services (Disney+, Hulu, HBO)
-- [ ] Real-time continuous scanning
+- [ ] Support other streaming services (Disney+, Hulu, HBO, Prime Video)
+- [ ] Real-time continuous scanning mode
 - [ ] User history and favorites
 - [ ] Social sharing features
+- [ ] Offline caching of recent results
+- [ ] Multi-language support
 
 ## 📊 Current Limitations
 
-- **Database Size**: Only 50 titles in vector database
-- **OCR Accuracy**: Struggles with stylized fonts and logos
-- **Background Complexity**: Text over busy backgrounds may fail
-- **Lighting**: Needs decent lighting for best results
+- **API Cost**: ~$0.01-0.02 per recognition (GPT-4o Vision pricing)
+- **Latency**: 2-4 seconds per request (depends on OpenAI API)
+- **Accuracy**: GPT-4o may hallucinate occasionally - always verify with TMDB
+- **Privacy**: Images are sent to OpenAI for processing
 
 ## 🛠️ Tech Stack
 
 **Backend:**
 - Python 3.11
 - FastAPI (API framework)
-- CLIP (openai/clip-vit-base-patch32)
-- EasyOCR (text extraction)
-- NumPy & scikit-learn (vector operations)
+- OpenAI GPT-4o Vision (image recognition)
 - TMDB API (metadata)
+- Pillow (image processing)
 
 **iOS:**
 - Swift 5.9+
