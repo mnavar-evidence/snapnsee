@@ -4,6 +4,9 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
+# Force cache bust - v2
+RUN echo "Cache bust: 2025-11-26-v2"
+
 # Copy backend files
 COPY backend/requirements.txt /app/
 COPY backend/ /app/
