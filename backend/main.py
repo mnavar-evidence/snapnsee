@@ -284,6 +284,82 @@ async def recognize_image_endpoint(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
+@app.get("/api/v1/providers/{media_type}/{media_id}", tags=["Providers"])
+async def get_providers(media_type: str, media_id: str, country: str = "US"):
+    """
+    Fetches streaming provider availability for a given media item from TMDB.
+    """
+    if not TMDB_API_KEY or TMDB_API_KEY == "YOUR_TMDB_API_KEY":
+        raise HTTPException(status_code=500, detail="TMDB API key not configured")
+
+    try:
+        # Call TMDB watch/providers endpoint
+        tmdb_url = f"{TMDB_API_URL}/{media_type}/{media_id}/watch/providers"
+        params = {"api_key": TMDB_API_KEY}
+
+        response = requests.get(tmdb_url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        # Extract providers for the specified country
+        results = data.get("results", {})
+        country_data = results.get(country, {})
+
+        if not country_data:
+            return {
+                "available": False,
+                "providers": [],
+                "country": country
+            }
+
+        # Get flatrate (subscription) providers
+        flatrate = country_data.get("flatrate", [])
+
+        # Map provider names to simplified IDs
+        provider_list = []
+        for provider in flatrate:
+            provider_name = provider.get("provider_name", "").lower()
+            provider_id = map_provider_id(provider_name)
+            if provider_id and provider_id not in provider_list:
+                provider_list.append(provider_id)
+
+        return {
+            "available": len(provider_list) > 0,
+            "providers": provider_list,
+            "country": country,
+            "link": country_data.get("link")
+        }
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching providers from TMDB: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch provider data")
+
+
+def map_provider_id(tmdb_name: str) -> str:
+    """Map TMDB provider name to our simplified ID"""
+    if "netflix" in tmdb_name:
+        return "netflix"
+    if "hulu" in tmdb_name:
+        return "hulu"
+    if "hbo" in tmdb_name or "max" in tmdb_name:
+        return "hbo"
+    if "disney" in tmdb_name:
+        return "disney"
+    if "prime" in tmdb_name or "amazon" in tmdb_name:
+        return "prime"
+    if "apple" in tmdb_name:
+        return "apple"
+    if "paramount" in tmdb_name:
+        return "paramount"
+    if "peacock" in tmdb_name:
+        return "peacock"
+    if "showtime" in tmdb_name:
+        return "showtime"
+    if "starz" in tmdb_name:
+        return "starz"
+    return None
+
+
 if __name__ == "__main__":
     import uvicorn
     print("Starting SnapnSee API v2.0 (GPT-4o Vision)...")

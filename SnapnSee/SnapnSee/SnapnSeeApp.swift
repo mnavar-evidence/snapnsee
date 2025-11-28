@@ -1,10 +1,12 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct SnapnSeeApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
         }
+        .modelContainer(for: [WatchlistItem.self, UserPreferences.self])
     }
 }

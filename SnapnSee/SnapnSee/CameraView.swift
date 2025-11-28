@@ -116,11 +116,26 @@ struct CameraPreview: UIViewRepresentable {
         camera.preview.frame = view.frame
         camera.preview.videoGravity = .resizeAspectFill
         view.layer.addSublayer(camera.preview)
-        camera.session.startRunning()
+
+        // Start session on background thread to avoid UI hang
+        DispatchQueue.global(qos: .userInitiated).async {
+            camera.session.startRunning()
+        }
+
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {}
+
+    static func dismantleUIView(_ uiView: UIView, coordinator: ()) {
+        // Stop session on background thread when view is removed
+        if let layer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer,
+           let session = layer.session {
+            DispatchQueue.global(qos: .userInitiated).async {
+                session.stopRunning()
+            }
+        }
+    }
 }
 
 // Camera Model for managing AVFoundation
